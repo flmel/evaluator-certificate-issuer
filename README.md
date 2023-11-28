@@ -9,12 +9,12 @@ It allows the `evaluator` to mint NFT if the student has covered all the require
 This contract slightly deviates from the [NEP-171](https://github.com/near/NEPs/blob/master/neps/nep-0171.md) core implementation standard. Since the `nft_transfer` and `nft_transfer_call` are only allowed to the `evaluator` (`owner_id`) account, effectively making the certificates (NFTs) non-transferable.
 
 
-1. Initializing the contract
+#### 1. Initializing the contract
 ```rust
 new(owner_id: AccountId, metadata: NFTContractMetadata)
 ```
 
-2. Minting a new NFT
+#### 2. Minting a new NFT
 ```rust
-fn nft_mint(&mut self, token_id: TokenId, token_owner_id: AccountId, token_metadata: TokenMetadata)
+nft_mint(&mut self, token_id: TokenId, token_owner_id: AccountId, token_metadata: TokenMetadata)
 ``````
