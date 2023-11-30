@@ -18,7 +18,7 @@ test.beforeEach(async (t) => {
     process.argv[2],
   );
 
-  // Save state for test runs, it is unique for each test
+  // Save state for test runs, it is unique for each test 
   t.context.worker = worker;
   t.context.accounts = { root, contract };
 });
@@ -30,15 +30,54 @@ test.afterEach.always(async (t) => {
   });
 });
 
-test('returns the default greeting', async (t) => {
+test('new initializes contract states', async (t) => {
   const { contract } = t.context.accounts;
-  const greeting: string = await contract.view('get_greeting', {});
-  t.is(greeting, 'Hello');
+  await contract.call(contract, 'new', { owner_id: contract.accountId, metadata: { spec: 'nft-1.0.0', name: 'test certificate', symbol: 'NCD' } });
+
+  t.is(true, true);
 });
 
-test('changes the greeting', async (t) => {
-  const { root, contract } = t.context.accounts;
-  await root.call(contract, 'set_greeting', { greeting: 'Howdy' });
-  const greeting: string = await contract.view('get_greeting', {});
-  t.is(greeting, 'Howdy');
+
+test('new fails to re-initializes contract state', async (t) => {
+  const { contract } = t.context.accounts;
+  await contract.call(contract, 'new', { owner_id: contract.accountId, metadata: { spec: 'nft-1.0.0', name: 'test certificate', symbol: 'NCD' } });
+
+  const result = await contract.callRaw(contract, 'new', { owner_id: contract.accountId, metadata: { spec: 'nft-1.0.0', name: 'test certificate', symbol: 'NCD' } });
+
+  t.is(result.failed, true);
+});
+
+
+
+test('nft_mint does mint nft for the user', async (t) => {
+  const { contract } = t.context.accounts;
+  await contract.call(contract, 'new', { owner_id: contract.accountId, metadata: { spec: 'nft-1.0.0', name: 'test certificate', symbol: 'NCD' } });
+
+  const minted_token: any = await contract.call(contract, 'nft_mint', {
+    token_id: '1',
+    token_owner_id: 'someone.testnet',
+    token_metadata: {
+      title: 'Certificate',
+      description: 'Successfully completed the course'
+    }
+  }, { gas: '300000000000000', attachedDeposit: '2490000000000000000000' });
+
+  t.is(minted_token.owner_id, 'someone.testnet');
+});
+
+test('nft_transfer fails so transfer the nft - making it account-bound', async (t) => {
+  const { contract, root } = t.context.accounts;
+  await contract.call(contract, 'new', { owner_id: contract.accountId, metadata: { spec: 'nft-1.0.0', name: 'test certificate', symbol: 'NCD' } });
+  await contract.call(contract, 'nft_mint', {
+    token_id: '1',
+    token_owner_id: root.accountId,
+    token_metadata: {
+      title: 'Certificate',
+      description: 'Successfully completed the course'
+    }
+  }, { gas: '300000000000000', attachedDeposit: '2490000000000000000000' });
+
+  const result: any = await root.callRaw(contract, 'nft_transfer', { receiver_id: 'someone_else.testnet', token_id: '1' });
+
+  t.is(result.failed, true);
 });
